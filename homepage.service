@@ -1,0 +1,15 @@
+[Unit]
+Description=Homepage script
+After=network.target
+
+[Service]
+Type=oneshot
+User=homepager
+Group=homepager
+SyslogIdentifier=homepage
+ExecStart=/opt/homepage/homepage
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

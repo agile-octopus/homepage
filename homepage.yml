@@ -1,0 +1,92 @@
+---
+- name: Deploy homepage script and systemd service
+  hosts: localhost
+  connection: local
+
+  vars:
+    homepage_user: homepager
+    homepage_dir: /opt/homepage
+    systemd_dir: /etc/systemd/system
+
+  tasks:
+    - name: Create homepager system user
+      ansible.builtin.user:
+        name: "{{ homepage_user }}"
+        system: true
+        create_home: false
+        shell: /usr/sbin/nologin
+        state: present
+      become: true
+
+    - name: Add current user to homepager group
+      ansible.builtin.user:
+        name: "{{ ansible_user_id }}"
+        groups: "{{ homepage_user }}"
+        append: true
+      become: true
+
+    - name: Create /opt/homepage directory
+      ansible.builtin.file:
+        path: "{{ homepage_dir }}"
+        state: directory
+        owner: "{{ homepage_user }}"
+        group: "{{ homepage_user }}"
+        mode: "0750"
+      become: true
+
+    - name: Copy homepage script
+      ansible.builtin.copy:
+        src: homepage
+        dest: "{{ homepage_dir }}/homepage"
+        mode: "0750"
+      become: true
+      become_user: "{{ homepage_user }}"
+
+    - name: Copy homepage templates
+      ansible.builtin.copy:
+        src: templates
+        dest: "{{ homepage_dir }}"
+        directory_mode: "0755"
+        mode : "0444"
+      become: true
+      become_user: "{{ homepage_user }}"
+
+    - name: Copy systemd service file
+      ansible.builtin.copy:
+        src: homepage.service
+        dest: "{{ systemd_dir }}/homepage.service"
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
+      notify: Reload systemd
+
+    - name: Copy systemd timer file
+      ansible.builtin.copy:
+        src: homepage.timer
+        dest: "{{ systemd_dir }}/homepage.timer"
+        owner: root
+        group: root
+        mode: "0644"
+      become: true
+      notify: Reload systemd
+
+    - name: Enable and start homepage timer
+      ansible.builtin.systemd:
+        name: homepage.timer
+        enabled: true
+        state: started
+        daemon_reload: true
+      become: true
+
+    - name: Run homepage service once immediately
+      ansible.builtin.systemd:
+        name: homepage.service
+        state: started
+      become: true
+
+  handlers:
+    - name: Reload systemd
+      ansible.builtin.systemd:
+        daemon_reload: true
+      become: true

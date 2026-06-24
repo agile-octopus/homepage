@@ -1,0 +1,11 @@
+[Unit]
+Description=Run homepage script at boot and every hour
+Requires=homepage.service
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=10min
+Unit=homepage.service
+
+[Install]
+WantedBy=timers.target

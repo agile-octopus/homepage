@@ -1,0 +1,56 @@
+#! /usr/bin/env python3
+
+import json
+import requests
+import sys
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+import datetime
+from time import time
+
+class LinuxKernel() :
+
+    def __init__(self, uri="https://www.kernel.org/releases.json") :
+        self.info = []
+        releases = requests.get(uri).json()['releases'] 
+
+        for r in sorted(releases, key=lambda r: r['released']['timestamp'], reverse=True) :
+            if r['moniker'] == 'linux-next' :
+                continue
+            r['released']['nice_date'] = datetime.datetime.fromtimestamp(r['released']['timestamp']).strftime('%Y/%m/%d-%H:%m:%d')
+
+            if r['released']['timestamp'] > (time() - (3600*24*3)) :
+                r['isnew'] = True
+            else :
+                r['isnew'] = False
+
+            self.info.append(r)
+
+    def show(self) :
+        format_string = "{moniker}\n{version}\n{changelog}\n"
+        for release in self.info :
+            print(format_string.format(**release), file=sys.stderr)
+            print(release, file=sys.stderr)
+
+def main() :
+
+    templates_folder = '/opt/homepage/templates'
+    homepage = '/opt/homepage/homepage.html'
+
+    env = Environment(
+        loader = FileSystemLoader(templates_folder),
+        autoescape=select_autoescape()
+    )
+
+    lk = LinuxKernel()
+    lk.show()
+
+    data = {}
+    data['LinuxKernel'] = lk.info
+    data['footer'] = { 'LatestUpdate' : datetime.datetime.now() }
+
+
+    template = env.get_template(f"base.j2")
+
+    template.stream(data).dump(homepage)
+
+main()
