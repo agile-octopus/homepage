@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>.: Homepage :.</title>
+    <style>
+      .new {
+        color:red;
+        font-weight: bold;
+      }
+    </style>
+</head>
+<body>
+  <div id="LinuxKernel">
+    <h1>Linux Kernel</h1>
+    <table>
+      {% for release in LinuxKernel %}
+      <tr>
+        <td>{{ release.released.nice_date }}</td>
+        {% if release.changelog %}
+        <td><a href="{{ release.changelog }}">{{ release.version }}</a></td>
+        {% else %}
+        <td>{{ release.version }}</td>
+        {% endif %}
+        {% if release.isnew is true %}
+        <td class="new">new!</td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  <div id="Footer">
+    Latest update : {{ footer.LatestUpdate }}
+  </div>
+</body>
+</html>
